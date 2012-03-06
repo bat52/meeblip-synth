@@ -249,7 +249,7 @@ TPREV_KBD_H:	    .BYTE 1
 TPREV_L:	        .BYTE 1
 TPREV_H:	        .BYTE 1
 DELTAT_L:	        .BYTE 1		        ;\ Time from former course
-DELTAT_H:	        .BYTE 1		        ;/ of the main loop (1 bit = 32 µs)
+DELTAT_H:	        .BYTE 1		        ;/ of the main loop (1 bit = 32 us)
 ENVPHASE:	        .BYTE 1		        ; 0=stop 1=attack 2=decay 3=sustain 4=release
 ENV_FRAC_L:	        .BYTE 1
 ENV_FRAC_H:	        .BYTE 1
@@ -558,7 +558,7 @@ TIMETORATE:
 ; and then converted to approximate an exponential saturation curve.
 ;
 ; polynomial y = a	+ bx + cx2 + dx3
-; with coefficients…
+; with coefficients:
 ;    a  0
 ;    b  0.210841569
 ;    c  0.000177823
@@ -2189,7 +2189,7 @@ RESET:
 
 ;initialize Timer1:
 		    ldi	    r16, 0x04    		;\ prescaler = CK/256
-		    out	    TCCr1B, r16		    ;/ (clock = 32µs)
+		    out	    TCCr1B, r16		    ;/ (clock = 32us)
 
 ;initialize Timer2:
             ldi     r16, 54             ;\  
@@ -2955,7 +2955,7 @@ MIDI_VELOCITY:
 		    lds	    r16, TPREV_L	    ;\
 		    lds	    r17, TPREV_H	    ;/ r17:r16 = t0
 		    sub	    r22, r16		    ;\ r23:r22 = t - t0 = dt
-		    sbc	    r23, r17		    ;/ (1 bit = 32 µs)
+		    sbc	    r23, r17		    ;/ (1 bit = 32 us)
 		    sts	    TPREV_L, r18	    ;\
 		    sts	    TPREV_H, r19	    ;/ t0 = t
     		sts	    DELTAT_L, r22		;\
@@ -3541,7 +3541,13 @@ MLP_PORTAWR:
 		    sts	    NOTE_H, r22
 		    sts	    NOTE_INTG, r23
 
-;pitch bender (-12..+12):
+;pitch bender (-3..+3): 
+;           bat52, reduced range for pitch bender to +3/-3. 
+;			When controlling meeblip with rockband keytar controller,
+;           this gives +1/-1 tone range - which is good to me.
+;			For some reason, the "real" bender range is 1 semit.
+;           less than "programmed" range (I had to use a 3 semit instead of 2).
+
 		    lds	    r16, MIDIPBEND_L	;\ r17,r16 = P.BEND
     		lds	    r17, MIDIPBEND_H	;/	-128,000..+127,996
 		    ldi	    r18, 5			    ;\ r17,r16 = P.BEND/32
@@ -3552,6 +3558,8 @@ MLP_PORTAWR:
 		    adc	    r17, r19		    ;/	-8,000..+7,999
 		    add	    r16, r18		    ;\ r17,r16 = 3/32*P.BEND
 		    adc	    r17, r19		    ;/	-12,000..+11,999
+			ldi	    r18, 2			    ;\ r17,r16 = P.BEND*3/32/4
+		    rcall	ASr16			    ;/	-3,000..+2,999
 		    add	    r22, r16		    ;\
 		    adc	    r23, r17		    ;/ add P.BEND
 
